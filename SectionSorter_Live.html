@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SectionSorter — Sonoran Schools 2025-26</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --blue:#2563EB;--blue-lt:#EFF6FF;--blue-mid:#BFDBFE;
+  --amber:#D97706;--amber-lt:#FFFBEB;
+  --green:#16A34A;--green-lt:#F0FDF4;
+  --red:#DC2626;--red-lt:#FEF2F2;
+  --gray:#6B7280;--gray-lt:#F9FAFB;--border:#E5E7EB;
+  --text:#111827;--muted:#6B7280;--r:10px;--r-sm:6px;
+  --navy:#1F3864;
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#F3F4F6;min-height:100vh;color:var(--text)}
+
+/* ── topbar ── */
+.topbar{background:#fff;border-bottom:1px solid var(--border);padding:0 1.25rem;height:54px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 1px 3px rgba(0,0,0,.07)}
+.brand{font-size:16px;font-weight:600;letter-spacing:-.3px}
+.brand em{color:var(--blue);font-style:normal}
+.brand small{font-size:11px;font-weight:400;color:var(--muted);margin-left:6px}
+.sync-wrap{display:flex;align-items:center;gap:6px}
+.dot{width:8px;height:8px;border-radius:50%;background:#D1D5DB;flex-shrink:0;transition:background .3s}
+.dot.loading{background:#F59E0B;animation:blink 1s infinite}
+.dot.ok{background:#16A34A}
+.dot.err{background:#DC2626}
+.dot.saving{background:#3B82F6;animation:blink .6s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.sync-txt{font-size:11px;color:var(--muted);max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.vtabs{display:flex;gap:4px}
+.vtab{padding:5px 14px;border-radius:var(--r-sm);border:1px solid transparent;background:transparent;color:var(--muted);cursor:pointer;font-size:13px;font-weight:500;transition:all .15s;font-family:inherit}
+.vtab.on{background:var(--blue-lt);color:var(--blue);border-color:var(--blue-mid)}
+.vtab:hover:not(.on){background:var(--gray-lt)}
+
+/* ── layout ── */
+.main{padding:1rem 1.25rem;max-width:960px;margin:0 auto}
+
+/* ── grade pills ── */
+.gpills{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:1rem}
+.gpill{padding:5px 14px;border-radius:20px;border:1.5px solid var(--border);background:#fff;color:var(--muted);cursor:pointer;font-size:13px;font-weight:500;font-family:inherit;transition:all .15s}
+.gpill.on{color:#fff;border-color:transparent;box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.gpill:hover:not(.on){border-color:#9CA3AF}
+
+/* ── card ── */
+.card{background:#fff;border-radius:var(--r);border:1px solid var(--border);padding:1.1rem 1.25rem;margin-bottom:1rem;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.card-hdr{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:.875rem;flex-wrap:wrap;gap:.5rem}
+.card-title{font-size:15px;font-weight:600}
+.card-sub{font-size:12px;color:var(--muted);margin-top:2px}
+
+/* ── pills/stats ── */
+.stats{display:flex;gap:5px;flex-wrap:wrap;align-items:center}
+.pill{padding:3px 9px;border-radius:20px;font-size:11px;font-weight:500}
+.p-tot{background:var(--gray-lt);color:var(--gray)}
+.p-a{background:var(--blue-lt);color:var(--blue)}
+.p-b{background:var(--amber-lt);color:var(--amber)}
+.p-u{background:var(--red-lt);color:var(--red)}
+.p-ok{background:var(--green-lt);color:var(--green)}
+
+/* ── progress bar ── */
+.prog{height:5px;background:#E5E7EB;border-radius:3px;overflow:hidden;display:flex;margin-bottom:.875rem}
+.prog-a{background:var(--blue);transition:width .4s}
+.prog-b{background:var(--amber);transition:width .4s}
+
+/* ── toolbar ── */
+.tbar{display:flex;gap:6px;margin-bottom:.75rem;flex-wrap:wrap;align-items:center}
+.tbar input{flex:1;min-width:140px;padding:7px 10px;border:1px solid var(--border);border-radius:var(--r-sm);font-size:13px;font-family:inherit;outline:none;color:var(--text)}
+.tbar input:focus{border-color:var(--blue)}
+.tbtn{padding:5px 10px;border-radius:var(--r-sm);border:1px solid var(--border);background:#fff;color:var(--muted);cursor:pointer;font-size:12px;font-weight:500;font-family:inherit;transition:all .12s}
+.tbtn.on{background:var(--blue-lt);color:var(--blue);border-color:var(--blue-mid)}
+.tbtn:hover:not(.on){background:var(--gray-lt)}
+.btn-auto{padding:5px 10px;border-radius:var(--r-sm);border:1px solid #BBF7D0;background:#F0FDF4;color:#15803D;cursor:pointer;font-size:12px;font-weight:500;font-family:inherit}
+.btn-reset{padding:5px 10px;border-radius:var(--r-sm);border:1px solid #FECACA;background:#FEF2F2;color:#B91C1C;cursor:pointer;font-size:12px;font-weight:500;font-family:inherit}
+.btn-print{padding:5px 10px;border-radius:var(--r-sm);border:1px solid var(--border);background:#fff;color:var(--muted);cursor:pointer;font-size:12px;font-weight:500;font-family:inherit}
+
+/* ── student rows ── */
+.slist{display:flex;flex-direction:column;gap:3px}
+.srow{border:1px solid var(--border);border-radius:var(--r-sm);background:#FAFAFA;overflow:hidden;transition:border-color .12s}
+.srow:hover{background:#fff;border-color:#D1D5DB}
+.srow.sa{border-left:3px solid var(--blue);background:var(--blue-lt)}
+.srow.sb{border-left:3px solid var(--amber);background:var(--amber-lt)}
+.srow.sn{border-left:3px solid #E5E7EB}
+.srow-main{display:flex;align-items:center;gap:8px;padding:7px 9px}
+.snum{font-size:10px;color:#D1D5DB;width:18px;text-align:right;flex-shrink:0}
+.av{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;flex-shrink:0}
+.av-f{background:#FCE7F3;color:#9D174D}
+.av-m{background:#DBEAFE;color:#1E40AF}
+.sinfo{flex:1;min-width:0}
+.sname{font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.smeta{display:flex;align-items:center;gap:5px;margin-top:2px;flex-wrap:wrap}
+.steacher{font-size:11px;color:var(--muted)}
+.svcs{display:flex;gap:3px}
+.svc{padding:1px 5px;border-radius:3px;font-size:10px;font-weight:600;cursor:pointer;border:1px solid transparent;user-select:none;transition:all .12s;font-family:inherit}
+.svc.off{background:var(--gray-lt);color:#D1D5DB;border-color:var(--border)}
+.svc.off:hover{color:#9CA3AF;border-color:#9CA3AF}
+.svc.ESS{background:#FEF3C7;color:#92400E;border-color:#FDE68A}
+.svc.EL{background:#EDE7F6;color:#5B21B6;border-color:#DDD6FE}
+.svc.Speech{background:#DCFCE7;color:#166534;border-color:#BBF7D0}
+.svc.x504{background:#FEE2E2;color:#991B1B;border-color:#FECACA}
+.nbtn{padding:1px 6px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;font-size:10px;font-family:inherit;transition:all .12s}
+.nbtn.has{background:#FEF9C3;color:#A16207;border-color:#FDE68A}
+.secbtns{display:flex;gap:3px;flex-shrink:0}
+.sbtn{width:32px;height:26px;border-radius:4px;border:1px solid var(--border);background:#fff;color:var(--muted);cursor:pointer;font-size:12px;font-weight:600;font-family:inherit;transition:all .12s}
+.sbtn:hover{border-color:#9CA3AF}
+.sbtn.A{background:var(--blue);color:#fff;border-color:var(--blue)}
+.sbtn.B{background:var(--amber);color:#fff;border-color:var(--amber)}
+
+/* ── notes ── */
+.nwrap{padding:0 9px 7px 55px;display:none}
+.nwrap.open{display:block}
+.nwrap textarea{width:100%;padding:5px 7px;border:1px solid var(--border);border-radius:var(--r-sm);font-size:12px;font-family:inherit;resize:none;outline:none;min-height:46px;background:#FFFDE7;color:var(--text)}
+.nwrap textarea:focus{border-color:var(--blue)}
+
+/* ── export bar ── */
+.ebar{display:flex;gap:7px;justify-content:flex-end;margin-top:.75rem;flex-wrap:wrap}
+.ebtn{padding:6px 13px;border-radius:var(--r-sm);border:1px solid var(--border);background:#fff;color:var(--text);cursor:pointer;font-size:13px;font-weight:500;font-family:inherit;transition:all .12s}
+.ebtn:hover{background:var(--gray-lt)}
+.ebtn.pri{background:var(--blue);color:#fff;border-color:var(--blue)}
+.ebtn.pri:hover{background:#1D4ED8}
+
+/* ── admin / master ── */
+.mgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(172px,1fr));gap:7px;margin-bottom:1rem}
+.mc{background:#fff;border:1px solid var(--border);border-radius:var(--r);padding:.8rem .95rem;cursor:pointer;transition:all .15s;box-shadow:0 1px 2px rgba(0,0,0,.05)}
+.mc:hover{border-color:#93C5FD;transform:translateY(-1px);box-shadow:0 3px 8px rgba(0,0,0,.08)}
+.mc-grade{font-size:13px;font-weight:600;margin-bottom:2px}
+.mc-teachers{font-size:11px;color:var(--muted);margin-bottom:.4rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mc-bar{height:4px;border-radius:2px;background:#E5E7EB;display:flex;overflow:hidden;margin-bottom:.35rem}
+.mc-a{background:var(--blue)}
+.mc-b{background:var(--amber)}
+.mc-nums{display:flex;justify-content:space-between;font-size:11px}
+.mc-status{font-size:11px;font-weight:500;margin-top:3px}
+.obanner{background:#fff;border:1px solid var(--border);border-radius:var(--r);padding:.8rem 1.1rem;margin-bottom:1rem;display:flex;align-items:center;gap:1rem;flex-wrap:wrap;box-shadow:0 1px 2px rgba(0,0,0,.05)}
+.ob-stat{text-align:center}
+.ob-num{font-size:20px;font-weight:600;line-height:1}
+.ob-lbl{font-size:11px;color:var(--muted);margin-top:2px}
+.ob-div{width:1px;height:32px;background:var(--border)}
+.ob-prog{flex:1;min-width:140px}
+.ob-bar{height:7px;background:#E5E7EB;border-radius:3px;overflow:hidden;display:flex;margin-top:3px}
+
+/* ── roster table ── */
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{text-align:left;padding:7px 9px;border-bottom:1px solid var(--border);font-weight:500;color:var(--muted);font-size:11px;white-space:nowrap}
+td{padding:6px 9px;border-bottom:1px solid #F3F4F6;vertical-align:middle}
+tr:hover td{background:#FAFAFA}
+.badge{display:inline-block;padding:2px 7px;border-radius:10px;font-size:10px;font-weight:500}
+.ba{background:var(--blue-lt);color:var(--blue)}
+.bb{background:var(--amber-lt);color:var(--amber)}
+.bn{background:var(--gray-lt);color:var(--muted)}
+.gtag{display:inline-block;padding:2px 7px;border-radius:10px;font-size:10px;font-weight:500}
+.adm-toolbar{display:flex;gap:8px;align-items:center;margin-bottom:.75rem;flex-wrap:wrap}
+.adm-toolbar input{flex:1;min-width:200px;padding:7px 10px;border:1px solid var(--border);border-radius:var(--r-sm);font-size:13px;font-family:inherit;outline:none}
+.adm-toolbar input:focus{border-color:var(--blue)}
+
+/* ── toast ── */
+.toast{position:fixed;bottom:20px;right:20px;background:#111827;color:#fff;padding:9px 16px;border-radius:var(--r);font-size:13px;font-weight:500;opacity:0;transform:translateY(6px);transition:all .25s;pointer-events:none;z-index:9999;box-shadow:0 4px 12px rgba(0,0,0,.2)}
+.toast.show{opacity:1;transform:translateY(0)}
+
+/* ── modal ── */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9000;display:flex;align-items:center;justify-content:center}
+.modal{background:#fff;border-radius:var(--r);padding:1.4rem;max-width:340px;width:90%;box-shadow:0 8px 24px rgba(0,0,0,.15)}
+.modal h3{font-size:14px;font-weight:600;margin-bottom:.4rem}
+.modal p{font-size:13px;color:var(--muted);margin-bottom:1.1rem;line-height:1.6}
+.mbtns{display:flex;gap:7px;justify-content:flex-end}
+
+/* ── empty / loading ── */
+.empty{text-align:center;padding:1.5rem;color:var(--muted);font-size:13px}
+.loading-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:4rem;gap:1rem}
+.spinner{width:36px;height:36px;border:3px solid var(--blue-mid);border-top-color:var(--blue);border-radius:50%;animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-screen p{font-size:14px;color:var(--muted)}
+
+/* ── print ── */
+@media print{
+  .topbar,.gpills,.tbar,.ebar,.toast,.modal-bg,.vtabs,.adm-toolbar{display:none!important}
+  .main{padding:0;max-width:100%}
+  .card{box-shadow:none;border:1px solid #ddd;page-break-inside:avoid}
+  .nwrap{display:block!important}
+  .svc.off{display:none}
+  .sbtn,.nbtn,.btn-auto,.btn-reset,.btn-print{display:none!important}
+  #av{display:none!important}
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand"><em>Section</em>Sorter <small>Sonoran Schools · 2025-26</small></div>
+  <div style="display:flex;align-items:center;gap:12px">
+    <div class="sync-wrap">
+      <div class="dot loading" id="dot"></div>
+      <div class="sync-txt" id="stxt">Connecting to Google Sheets...</div>
+    </div>
+    <div class="vtabs">
+      <button class="vtab on" id="vt-t" onclick="setView('t')">Teacher View</button>
+      <button class="vtab" id="vt-a" onclick="setView('a')">Admin / Master</button>
+    </div>
+  </div>
+</div>
+
+<div class="main">
+  <!-- TEACHER VIEW -->
+  <div id="tv">
+    <div class="gpills" id="gpills"></div>
+    <div id="gpanel"><div class="loading-screen"><div class="spinner"></div><p>Loading student data from Google Sheets...</p></div></div>
+  </div>
+
+  <!-- ADMIN VIEW -->
+  <div id="av" style="display:none">
+    <div class="obanner" id="obanner"></div>
+    <div class="card">
+      <div class="card-hdr">
+        <div><div class="card-title">All grades — overview</div><div class="card-sub">Click any card to open that grade</div></div>
+        <button class="ebtn pri" onclick="exportAll()">Export full roster CSV</button>
+      </div>
+      <div class="mgrid" id="mgrid"></div>
+    </div>
+    <div class="card">
+      <div class="adm-toolbar">
+        <span style="font-size:14px;font-weight:600">Complete roster</span>
+        <input type="text" placeholder="Search by name or grade..." id="msearch" oninput="renderMasterTable()">
+        <button class="tbtn on" id="mf-all" onclick="setMF('all')">All</button>
+        <button class="tbtn" id="mf-a" onclick="setMF('a')">Sec A</button>
+        <button class="tbtn" id="mf-b" onclick="setMF('b')">Sec B</button>
+        <button class="tbtn" id="mf-u" onclick="setMF('u')">Unset</button>
+      </div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Grade</th><th>Last Name</th><th>First Name</th><th>Gender</th><th>Teacher</th><th>Services</th><th>Section</th><th>Notes</th></tr></thead>
+          <tbody id="mtbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── CONFIG ────────────────────────────────────────────────────────────────────
+const SHEET_ID = '1qTLBIFMoC2vhhNd2f3s_zGm8Qv6MpsOYNDQHUpBZmLs';
+const API_KEY  = 'AIzaSyD-pzV4dUoBY7yCIFNS8ckZb5NxeBwPnD8';
+const BASE     = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}`;
+
+// ── GRADE CONFIG ───────────────────────────────────────────────────────────────
+const GRADES = ['K','01','02','03','04','05','06','07'];
+const GL = {K:'Kindergarten','01':'1st Grade','02':'2nd Grade','03':'3rd Grade','04':'4th Grade','05':'5th Grade','06':'6th Grade','07':'7th Grade'};
+// Tab names must match exactly what's in your Google Sheet
+const SHEET_TABS = {
+  K:'Kindergarten','01':'1st Grade','02':'2nd Grade','03':'3rd Grade',
+  '04':'4th Grade','05':'5th Grade','06':'6th Grade','07':'7th Grade'
+};
+const GCOL = {
+  K:['#C6EFCE','#375623'],'01':['#FFFDE7','#7D5800'],'02':['#FFEBEE','#9C0006'],
+  '03':['#EDE7F6','#4B1D5B'],'04':['#DBEAFE','#1F4E79'],'05':['#FFEDD5','#C2410C'],
+  '06':['#DCFCE7','#15803D'],'07':['#FEF9C3','#B45309']
+};
+const SVCS = ['ESS','EL','Speech','504'];
+
+// ── STATE ─────────────────────────────────────────────────────────────────────
+let students  = {};   // id -> student object
+let sheetRows = {};   // grade -> {sheetRowNum, colMap} for each student
+let curGrade  = 'K';
+let curFilter = 'all';
+let curSearch = '';
+let mFilter   = 'all';
+let saveQueue = {};
+let saveTimer = null;
+let dataLoaded = false;
+
+// ── SYNC STATUS ───────────────────────────────────────────────────────────────
+function setSync(state, msg) {
+  const d = document.getElementById('dot');
+  const t = document.getElementById('stxt');
+  d.className = 'dot ' + state;
+  t.textContent = msg;
+}
+
+// ── LOAD ALL GRADES FROM SHEETS ───────────────────────────────────────────────
+async function loadAll() {
+  setSync('loading', 'Loading from Google Sheets...');
+  students = {};
+  sheetRows = {};
+
+  try {
+    // Load each grade tab in parallel
+    const promises = GRADES.map(g => loadGrade(g));
+    await Promise.all(promises);
+    dataLoaded = true;
+    setSync('ok', `Loaded ${Object.keys(students).length} students · ${new Date().toLocaleTimeString()}`);
+    buildPills();
+    renderGrade();
+  } catch(e) {
+    setSync('err', 'Load failed — check API key & sheet sharing');
+    console.error(e);
+    document.getElementById('gpanel').innerHTML =
+      `<div class="empty">Could not load data.<br><small>Make sure the sheet is shared as "Anyone with link can view" and your API key is valid.<br>Error: ${e.message}</small></div>`;
+  }
+}
+
+async function loadGrade(grade) {
+  const tab = SHEET_TABS[grade];
+  // Read rows 5 onwards (row 1-4 are headers on each grade sheet)
+  const url = `${BASE}/values/${encodeURIComponent(tab)}!A5:M200?key=${API_KEY}`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`Failed to load ${tab}: ${res.status}`);
+  const data = await res.json();
+  const rows = data.values || [];
+
+  sheetRows[grade] = {};
+
+  rows.forEach((row, i) => {
+    const last    = (row[1] || '').trim();
+    const first   = (row[2] || '').trim();
+    const teacher = (row[4] || '').trim();
+    if (!last && !first) return; // skip empty rows
+
+    const id = `${grade}_${last}_${first}_${i}`;
+    const sheetRow = i + 5; // actual sheet row number
+
+    students[id] = {
+      id, grade, last, first,
+      gender:  (row[3] || '').trim(),
+      teacher: teacher,
+      section: (row[6] || '').trim().toUpperCase(),
+      ess:     (row[7] || '').trim().toUpperCase() === 'Y',
+      el:      (row[8] || '').trim().toUpperCase() === 'Y',
+      speech:  (row[9] || '').trim().toUpperCase() === 'Y',
+      f504:    (row[10] || '').trim().toUpperCase() === 'Y',
+      notes:   (row[12] || '').trim(),
+      notesOpen: false,
+      sheetRow: sheetRow,
+      tab: tab,
+    };
+  });
+}
+
+// ── SAVE A STUDENT ROW ────────────────────────────────────────────────────────
+async function saveStudent(s) {
+  setSync('saving', 'Saving...');
+  try {
+    const values = [[
+      '',           // A: # (don't overwrite)
+      s.last,       // B: Last Name
+      s.first,      // C: First Name
+      s.gender,     // D: Gender
+      s.teacher,    // E: Teacher
+      '',           // F: State ID (don't overwrite)
+      s.section,    // G: Section
+      s.ess    ? 'Y' : '', // H: ESS
+      s.el     ? 'Y' : '', // I: EL
+      s.speech ? 'Y' : '', // J: Speech
+      s.f504   ? 'Y' : '', // K: 504
+      '',           // L: spacer
+      s.notes,      // M: Notes
+    ]];
+
+    const tab = encodeURIComponent(s.tab);
+    const range = `${tab}!A${s.sheetRow}:M${s.sheetRow}`;
+    const url = `${BASE}/values/${range}?valueInputOption=RAW&key=${API_KEY}`;
+
+    const res = await fetch(url, {
+      method: 'PUT',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({values})
+    });
+
+    if (res.ok) {
+      setSync('ok', `Saved · ${new Date().toLocaleTimeString()}`);
+    } else {
+      const err = await res.json();
+      throw new Error(err.error?.message || `HTTP ${res.status}`);
+    }
+  } catch(e) {
+    setSync('err', 'Save failed');
+    showToast('Save failed: ' + e.message);
+    console.error(e);
+  }
+}
+
+function queueSave(s) {
+  saveQueue[s.id] = s;
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(async () => {
+    const batch = Object.values(saveQueue);
+    saveQueue = {};
+    for (const stu of batch) await saveStudent(stu);
+  }, 900);
+}
+
+// ── HELPERS ───────────────────────────────────────────────────────────────────
+function byGrade(g) {
+  return Object.values(students)
+    .filter(s => s.grade === g)
+    .sort((a,b) => a.last.localeCompare(b.last) || a.first.localeCompare(b.first));
+}
+function stats(g) {
+  const l = byGrade(g);
+  const a = l.filter(s => s.section === 'A').length;
+  const b = l.filter(s => s.section === 'B').length;
+  return {total:l.length, a, b, unset:l.length-a-b, done:l.length>0&&l.length===a+b};
+}
+
+// ── VIEW SWITCHING ────────────────────────────────────────────────────────────
+function setView(v) {
+  document.getElementById('tv').style.display = v==='t' ? '' : 'none';
+  document.getElementById('av').style.display = v==='a' ? '' : 'none';
+  document.getElementById('vt-t').classList.toggle('on', v==='t');
+  document.getElementById('vt-a').classList.toggle('on', v==='a');
+  if (v === 'a') renderAdmin();
+}
+
+// ── GRADE PILLS ───────────────────────────────────────────────────────────────
+function buildPills() {
+  const c = document.getElementById('gpills');
+  c.innerHTML = '';
+  GRADES.forEach(g => {
+    const st = stats(g);
+    const btn = document.createElement('button');
+    btn.className = 'gpill' + (g === curGrade ? ' on' : '');
+    btn.innerHTML = GL[g] + (st.done ? ' ✓' : st.unset === st.total ? '' : ` (${st.a+st.b}/${st.total})`);
+    if (g === curGrade) {
+      btn.style.background = GCOL[g][1];
+      btn.style.color = '#fff';
+    }
+    btn.onclick = () => { curGrade=g; curFilter='all'; curSearch=''; buildPills(); renderGrade(); };
+    c.appendChild(btn);
+  });
+}
+
+// ── SERVICE TAG HTML ──────────────────────────────────────────────────────────
+function svcHTML(s) {
+  return SVCS.map(sv => {
+    const val = sv==='ESS'?s.ess : sv==='EL'?s.el : sv==='Speech'?s.speech : s.f504;
+    const cls = val ? sv.replace('504','x504') : 'off';
+    return `<button class="svc ${cls}" onclick="toggleSvc('${s.id}','${sv}')">${sv}</button>`;
+  }).join('');
+}
+
+// ── RENDER GRADE ──────────────────────────────────────────────────────────────
+function renderGrade() {
+  if (!dataLoaded) return;
+  const panel = document.getElementById('gpanel');
+  const gs  = byGrade(curGrade);
+  const st  = stats(curGrade);
+  const teachers = [...new Set(gs.map(s => s.teacher))].join(' · ');
+  const pA  = st.total ? Math.round(st.a / st.total * 100) : 0;
+  const pB  = st.total ? Math.round(st.b / st.total * 100) : 0;
+
+  let fl = gs;
+  if (curFilter === 'a') fl = gs.filter(s => s.section === 'A');
+  else if (curFilter === 'b') fl = gs.filter(s => s.section === 'B');
+  else if (curFilter === 'u') fl = gs.filter(s => !s.section);
+  if (curSearch) fl = fl.filter(s =>
+    (s.first+' '+s.last).toLowerCase().includes(curSearch.toLowerCase()) ||
+    s.teacher.toLowerCase().includes(curSearch.toLowerCase())
+  );
+
+  panel.innerHTML = `<div class="card">
+    <div class="card-hdr">
+      <div>
+        <div class="card-title">${GL[curGrade]}</div>
+        <div class="card-sub">${teachers}</div>
+      </div>
+      <div class="stats">
+        <span class="pill p-tot">${st.total} students</span>
+        <span class="pill p-a">A: ${st.a}</span>
+        <span class="pill p-b">B: ${st.b}</span>
+        ${st.unset ? `<span class="pill p-u">${st.unset} unset</span>` : `<span class="pill p-ok">✓ Complete</span>`}
+      </div>
+    </div>
+    <div class="prog"><div class="prog-a" style="width:${pA}%"></div><div class="prog-b" style="width:${pB}%"></div></div>
+    <div class="tbar">
+      <input type="text" placeholder="Search student or teacher..." id="ssearch" value="${curSearch}" oninput="curSearch=this.value;renderGrade()">
+      <button class="tbtn${curFilter==='all'?' on':''}" onclick="curFilter='all';renderGrade()">All</button>
+      <button class="tbtn${curFilter==='a'?' on':''}" onclick="curFilter='a';renderGrade()">Sec A</button>
+      <button class="tbtn${curFilter==='b'?' on':''}" onclick="curFilter='b';renderGrade()">Sec B</button>
+      <button class="tbtn${curFilter==='u'?' on':''}" onclick="curFilter='u';renderGrade()">Unset</button>
+      <button class="btn-auto" onclick="autoBalance()">⚡ Auto-balance</button>
+      <button class="btn-reset" onclick="confirmReset()">↺ Reset grade</button>
+      <button class="btn-print" onclick="window.print()">🖨 Print</button>
+    </div>
+    <div class="slist">${fl.length ? fl.map(s => `
+      <div class="srow ${s.section==='A'?'sa':s.section==='B'?'sb':'sn'}" id="sr-${s.id}">
+        <div class="srow-main">
+          <div class="snum">${gs.indexOf(s)+1}</div>
+          <div class="av ${s.gender==='F'?'av-f':'av-m'}">${(s.first[0]||'')}${(s.last[0]||'')}</div>
+          <div class="sinfo">
+            <div class="sname">${s.last}, ${s.first}</div>
+            <div class="smeta">
+              <span class="steacher">${s.teacher}</span>
+              <div class="svcs">${svcHTML(s)}</div>
+              <button class="nbtn${s.notes?' has':''}" onclick="toggleNotes('${s.id}')" id="nb-${s.id}">${s.notes ? '✎ Note' : '+ Note'}</button>
+            </div>
+          </div>
+          <div class="secbtns">
+            <button class="sbtn${s.section==='A'?' A':''}" onclick="assign('${s.id}','A')">A</button>
+            <button class="sbtn${s.section==='B'?' B':''}" onclick="assign('${s.id}','B')">B</button>
+          </div>
+        </div>
+        <div class="nwrap${s.notesOpen?' open':''}" id="nw-${s.id}">
+          <textarea placeholder="Placement notes — siblings, keep with/away from, academic needs, behavior, teacher preference..." oninput="saveNote('${s.id}',this.value)">${s.notes}</textarea>
+        </div>
+      </div>`).join('') : '<div class="empty">No students match this filter</div>'}
+    </div>
+    <div class="ebar">
+      <button class="ebtn" onclick="exportGrade()">Export ${GL[curGrade]} CSV</button>
+      ${st.done ? `<button class="ebtn pri" onclick="showToast('${GL[curGrade]} is complete! 🎉')">Mark complete ✓</button>` : ''}
+    </div>
+  </div>`;
+
+  const si = document.getElementById('ssearch');
+  if (si) si.focus();
+}
+
+// ── ACTIONS ───────────────────────────────────────────────────────────────────
+function assign(id, sec) {
+  const s = students[id]; if (!s) return;
+  s.section = s.section === sec ? '' : sec;
+  queueSave(s);
+  renderGrade();
+  buildPills();
+  if (stats(curGrade).done) celebrate();
+}
+
+function toggleSvc(id, svc) {
+  const s = students[id]; if (!s) return;
+  if      (svc==='ESS')    s.ess    = !s.ess;
+  else if (svc==='EL')     s.el     = !s.el;
+  else if (svc==='Speech') s.speech = !s.speech;
+  else                     s.f504   = !s.f504;
+  queueSave(s);
+  renderGrade();
+}
+
+function toggleNotes(id) {
+  const s = students[id]; if (!s) return;
+  s.notesOpen = !s.notesOpen;
+  const nw = document.getElementById('nw-' + id);
+  if (nw) {
+    nw.classList.toggle('open', s.notesOpen);
+    if (s.notesOpen) nw.querySelector('textarea').focus();
+  }
+}
+
+function saveNote(id, val) {
+  const s = students[id]; if (!s) return;
+  s.notes = val;
+  queueSave(s);
+  const nb = document.getElementById('nb-' + id);
+  if (nb) { nb.className = 'nbtn' + (val ? ' has' : ''); nb.textContent = val ? '✎ Note' : '+ Note'; }
+}
+
+function autoBalance() {
+  const unset = byGrade(curGrade).filter(s => !s.section);
+  unset.forEach((s,i) => { s.section = i%2===0 ? 'A' : 'B'; queueSave(s); });
+  showToast(`Auto-balanced ${unset.length} students!`);
+  renderGrade(); buildPills();
+}
+
+function confirmReset() {
+  const o = document.createElement('div');
+  o.className = 'modal-bg';
+  o.innerHTML = `<div class="modal">
+    <h3>Reset ${GL[curGrade]}?</h3>
+    <p>This clears all section assignments, service tags, and notes for <strong>${GL[curGrade]}</strong> and saves to the shared Google Sheet. This cannot be undone.</p>
+    <div class="mbtns">
+      <button class="ebtn" onclick="this.closest('.modal-bg').remove()">Cancel</button>
+      <button class="ebtn" style="background:#DC2626;color:#fff;border-color:#DC2626" onclick="resetGrade();this.closest('.modal-bg').remove()">Yes, reset</button>
+    </div>
+  </div>`;
+  document.body.appendChild(o);
+}
+
+function resetGrade() {
+  byGrade(curGrade).forEach(s => {
+    s.section=''; s.ess=false; s.el=false; s.speech=false; s.f504=false; s.notes=''; s.notesOpen=false;
+    queueSave(s);
+  });
+  showToast(`${GL[curGrade]} has been reset`);
+  renderGrade(); buildPills();
+}
+
+// ── ADMIN / MASTER ────────────────────────────────────────────────────────────
+function renderAdmin() {
+  renderOverall(); renderMasterGrid(); renderMasterTable();
+}
+
+function renderOverall() {
+  const all = Object.values(students);
+  const total = all.length;
+  const a = all.filter(s=>s.section==='A').length;
+  const b = all.filter(s=>s.section==='B').length;
+  const u = total-a-b;
+  const pA = Math.round(a/total*100);
+  const pB = Math.round(b/total*100);
+  document.getElementById('obanner').innerHTML = `
+    <div class="ob-stat"><div class="ob-num">${total}</div><div class="ob-lbl">Total students</div></div>
+    <div class="ob-div"></div>
+    <div class="ob-stat"><div class="ob-num" style="color:var(--blue)">${a}</div><div class="ob-lbl">Section A</div></div>
+    <div class="ob-stat"><div class="ob-num" style="color:var(--amber)">${b}</div><div class="ob-lbl">Section B</div></div>
+    <div class="ob-stat"><div class="ob-num" style="color:var(--red)">${u}</div><div class="ob-lbl">Unassigned</div></div>
+    <div class="ob-div"></div>
+    <div class="ob-prog">
+      <div style="font-size:11px;color:var(--muted)">Overall progress — ${pA+pB}% placed</div>
+      <div class="ob-bar"><div class="prog-a" style="width:${pA}%"></div><div class="prog-b" style="width:${pB}%"></div></div>
+    </div>`;
+}
+
+function renderMasterGrid() {
+  document.getElementById('mgrid').innerHTML = GRADES.map(g => {
+    const st = stats(g);
+    const pA = st.total ? Math.round(st.a/st.total*100) : 0;
+    const pB = st.total ? Math.round(st.b/st.total*100) : 0;
+    const ts = [...new Set(byGrade(g).map(s=>s.teacher))].map(t=>t.split(',')[0]).join(' & ');
+    return `<div class="mc" onclick="setView('t');curGrade='${g}';curFilter='all';curSearch='';buildPills();renderGrade()">
+      <div class="mc-grade" style="color:${GCOL[g][1]}">${GL[g]}</div>
+      <div class="mc-teachers">${ts}</div>
+      <div class="mc-bar"><div class="mc-a" style="width:${pA}%"></div><div class="mc-b" style="width:${pB}%"></div></div>
+      <div class="mc-nums">
+        <span style="color:var(--blue)">A: ${st.a}</span>
+        <span style="color:var(--amber)">B: ${st.b}</span>
+        <span style="color:var(--gray)">${st.total} total</span>
+      </div>
+      <div class="mc-status" style="color:${st.done?'var(--green)':'var(--red)'}">
+        ${st.done ? '✓ Complete' : st.unset + ' unassigned'}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function setMF(f) {
+  mFilter = f;
+  ['all','a','b','u'].forEach(x => {
+    const el = document.getElementById('mf-' + x);
+    if (el) el.className = 'tbtn' + (x === f ? ' on' : '');
+  });
+  renderMasterTable();
+}
+
+function renderMasterTable() {
+  const q = (document.getElementById('msearch')||{}).value || '';
+  let rows = Object.values(students);
+  if (q) rows = rows.filter(s =>
+    (s.first+' '+s.last+' '+GL[s.grade]).toLowerCase().includes(q.toLowerCase()) ||
+    s.teacher.toLowerCase().includes(q.toLowerCase())
+  );
+  if (mFilter==='a') rows = rows.filter(s=>s.section==='A');
+  else if (mFilter==='b') rows = rows.filter(s=>s.section==='B');
+  else if (mFilter==='u') rows = rows.filter(s=>!s.section);
+  rows.sort((a,b) => (GRADES.indexOf(a.grade)-GRADES.indexOf(b.grade)) || a.last.localeCompare(b.last));
+
+  const svcBadges = s => {
+    const out = [];
+    if (s.ess)    out.push('<span style="background:#FEF3C7;color:#92400E;padding:1px 5px;border-radius:3px;font-size:10px;font-weight:600;margin-right:2px">ESS</span>');
+    if (s.el)     out.push('<span style="background:#EDE7F6;color:#5B21B6;padding:1px 5px;border-radius:3px;font-size:10px;font-weight:600;margin-right:2px">EL</span>');
+    if (s.speech) out.push('<span style="background:#DCFCE7;color:#166534;padding:1px 5px;border-radius:3px;font-size:10px;font-weight:600;margin-right:2px">Speech</span>');
+    if (s.f504)   out.push('<span style="background:#FEE2E2;color:#991B1B;padding:1px 5px;border-radius:3px;font-size:10px;font-weight:600;margin-right:2px">504</span>');
+    return out.join('') || '<span style="color:#D1D5DB;font-size:10px">—</span>';
+  };
+
+  document.getElementById('mtbody').innerHTML = rows.map(s => `<tr>
+    <td><span class="gtag" style="background:${GCOL[s.grade][0]};color:${GCOL[s.grade][1]}">${GL[s.grade]}</span></td>
+    <td style="font-weight:500">${s.last}</td>
+    <td>${s.first}</td>
+    <td style="color:var(--muted)">${s.gender}</td>
+    <td style="font-size:11px;color:var(--muted)">${s.teacher}</td>
+    <td>${svcBadges(s)}</td>
+    <td><span class="badge ${s.section==='A'?'ba':s.section==='B'?'bb':'bn'}">${s.section||'—'}</span></td>
+    <td style="font-size:11px;color:var(--muted);max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${s.notes||''}</td>
+  </tr>`).join('');
+}
+
+// ── EXPORT ────────────────────────────────────────────────────────────────────
+function exportGrade() {
+  const gs = byGrade(curGrade);
+  const csv = 'Last,First,Grade,Teacher,Gender,Section,ESS,EL,Speech,504,Notes\n' +
+    gs.map(s => `"${s.last}","${s.first}","${GL[s.grade]}","${s.teacher}","${s.gender}","${s.section}","${s.ess?'Y':''}","${s.el?'Y':''}","${s.speech?'Y':''}","${s.f504?'Y':''}","${s.notes.replace(/"/g,"'")}"`).join('\n');
+  dl(csv, GL[curGrade].replace(' ','_') + '_Sections.csv');
+  showToast(`${GL[curGrade]} exported!`);
+}
+
+function exportAll() {
+  const all = Object.values(students);
+  all.sort((a,b) => (GRADES.indexOf(a.grade)-GRADES.indexOf(b.grade)) || a.last.localeCompare(b.last));
+  const csv = 'Last,First,Grade,Teacher,Gender,Section,ESS,EL,Speech,504,Notes\n' +
+    all.map(s => `"${s.last}","${s.first}","${GL[s.grade]}","${s.teacher}","${s.gender}","${s.section}","${s.ess?'Y':''}","${s.el?'Y':''}","${s.speech?'Y':''}","${s.f504?'Y':''}","${s.notes.replace(/"/g,"'")}"`).join('\n');
+  dl(csv, 'Sonoran_All_Sections_2025-26.csv');
+  showToast('Full roster exported!');
+}
+
+function dl(content, filename) {
+  const a = document.createElement('a');
+  a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(content);
+  a.download = filename; a.click();
+}
+
+// ── TOAST & CONFETTI ──────────────────────────────────────────────────────────
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+function celebrate() {
+  showToast(GL[curGrade] + ' — all students placed! 🎉');
+  const stage = document.createElement('div');
+  stage.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:9998;overflow:hidden';
+  document.body.appendChild(stage);
+  const colors = ['#2563EB','#D97706','#16A34A','#DC2626','#7C3AED','#DB2777'];
+  for (let i=0; i<50; i++) {
+    const d = document.createElement('div');
+    const sz = 6 + Math.random() * 10;
+    d.style.cssText = `position:absolute;width:${sz}px;height:${sz}px;background:${colors[i%6]};border-radius:${Math.random()>.5?'50%':'2px'};left:${Math.random()*100}%;top:-12px`;
+    stage.appendChild(d);
+    d.animate(
+      [{transform:'translateY(0) rotate(0)',opacity:1},{transform:`translateY(${window.innerHeight*.85}px) rotate(720deg)`,opacity:0}],
+      {duration:1200+Math.random()*1000, easing:'ease-in', fill:'forwards', delay:Math.random()*400}
+    );
+  }
+  setTimeout(() => stage.remove(), 2500);
+}
+
+// ── AUTO-REFRESH every 45s to pick up other teachers' changes ─────────────────
+setInterval(() => {
+  if (!Object.keys(saveQueue).length) {
+    loadAll();
+  }
+}, 45000);
+
+// ── BOOT ─────────────────────────────────────────────────────────────────────
+loadAll();
+</script>
+</body>
+</html>
